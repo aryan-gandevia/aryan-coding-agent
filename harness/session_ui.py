@@ -1,10 +1,12 @@
 """Small terminal UI for selecting a session to resume.
 
-Uses raw-terminal input so the user can navigate with the arrow keys. Falls back
-to a plain numbered prompt if stdin is not a TTY.
+Uses raw-terminal input and ANSI escape sequences so the user can navigate with
+arrow keys without taking over the whole screen. Falls back to a plain
+numbered prompt if stdin is not a TTY.
 """
 
 import os
+import re
 import sys
 
 
@@ -15,81 +17,113 @@ def _terminal_width() -> int:
         return 80
 
 
-def _render_option(
+def _format_option(
     session: tuple[int, str, str], selected: bool, width: int
-) -> None:
-    """Print a single option row, overwriting the current line."""
-    session_id, name, summary = session
+) -> str:
+    """Return one menu row with a marker; selected row is highlighted in bold."""
+    session_id, name, _summary = session
     marker = ">" if selected else " "
-    prefix = f"{marker} [{session_id}] {name}: "
-    available = max(0, width - len(prefix) - 1)
-    if len(summary) > available:
-        summary = summary[: max(0, available - 3)] + "..."
-    sys.stdout.write(f"\r\x1b[K{prefix}{summary}\n")
+    plain = f"{marker} [{session_id}] {name}"
+    if len(plain) > width:
+        plain = plain[: max(0, width - 3)] + "..."
+    if selected:
+        return f"\x1b[1m{plain}\x1b[0m"
+    return plain
+
+
+def _print_options(
+    sessions: list[tuple[int, str, str]], selected: int, width: int
+) -> None:
+    """Print the option rows."""
+    for i, session in enumerate(sessions):
+        sys.stdout.write(_format_option(session, i == selected, width) + "\n")
     sys.stdout.flush()
 
 
-def _render_options(
-    sessions: list[tuple[int, str, str]], selected: int, width: int
-) -> None:
-    """Print the selectable session list (prompt is handled separately)."""
-    for i, session in enumerate(sessions):
-        _render_option(session, i == selected, width)
+def _read_raw_key(fd: int) -> bytes:
+    """Read the next key or escape sequence from the terminal as raw bytes."""
+    import select
+
+    ch = os.read(fd, 1)
+    if ch != b"\x1b":
+        return ch
+
+    # Arrow keys send ESC followed by '[' or 'O' and a final letter.
+    if select.select([fd], [], [], 0.2)[0]:
+        b1 = os.read(fd, 1)
+        if b1 in (b"[", b"O") and select.select([fd], [], [], 0.2)[0]:
+            b2 = os.read(fd, 1)
+            return b"\x1b" + b1 + b2
+        return b"\x1b" + b1
+    return ch
 
 
-def _tty_select(sessions: list[tuple[int, str, str]]) -> int | None:
-    """Raw-terminal arrow-key selection.
-
-    The prompt is printed once; only the option rows are redrawn when the
-    selection moves.
-    """
+def _inline_select(sessions: list[tuple[int, str, str]]) -> int | None:
+    """Inline arrow-key selection that stays anchored in one place."""
+    import select
     import termios
     import tty
 
     selected = 0
-    option_count = len(sessions)
     width = _terminal_width()
+    fd = sys.stdin.fileno()
 
-    sys.stdout.write(
-        "Select a session to resume (↑/↓, Enter to select, q to cancel):\n"
-    )
-    _render_options(sessions, selected, width)
+    print("Select a session to resume (↑/↓, Enter to select, q to cancel):")
+    _print_options(sessions, selected, width)
 
-    old_settings = termios.tcgetattr(sys.stdin)
-    tty.setcbreak(sys.stdin.fileno())
+    old_settings = termios.tcgetattr(fd)
+    tty.setraw(fd)
+
+    def _redraw() -> None:
+        # Move cursor back to the first option row, then overwrite each row in
+        # place. A carriage return ensures every line starts at column 0.
+        sys.stdout.write(f"\x1b[{len(sessions)}A")
+        for i, session in enumerate(sessions):
+            sys.stdout.write("\r\x1b[K")
+            sys.stdout.write(_format_option(session, i == selected, width))
+            sys.stdout.write("\n")
+        sys.stdout.flush()
+
     try:
         while True:
-            key = sys.stdin.read(1)
+            if not select.select([fd], [], [], None)[0]:
+                continue
+            key = _read_raw_key(fd)
 
-            # Enter
-            if key in ("\n", "\r"):
+            # Enter (carriage return in raw mode)
+            if key in (b"\n", b"\r"):
                 return sessions[selected][0]
 
             # Ctrl-C or 'q' cancels
-            if key == "\x03" or key == "q":
+            if key == b"\x03" or key == b"q":
                 return None
 
-            # Arrow keys start with ESC
-            if key == "\x1b":
-                seq = sys.stdin.read(2)
-                if seq == "[A":
-                    selected = (selected - 1) % len(sessions)
-                elif seq == "[B":
-                    selected = (selected + 1) % len(sessions)
-                else:
-                    continue
-                # Move cursor to the first option row and overwrite each line.
-                sys.stdout.write(f"\x1b[{option_count}A")
-                _render_options(sessions, selected, width)
+            # Lone ESC cancels
+            if key == b"\x1b":
+                return None
+
+            # Arrow up
+            if key in (b"\x1b[A", b"\x1bOA"):
+                selected = (selected - 1) % len(sessions)
+                _redraw()
+                continue
+
+            # Arrow down
+            if key in (b"\x1b[B", b"\x1bOB"):
+                selected = (selected + 1) % len(sessions)
+                _redraw()
+                continue
     finally:
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        # Move to a clean line after the menu.
+        print()
 
 
 def _fallback_select(sessions: list[tuple[int, str, str]]) -> int | None:
     """Plain numbered-list selection for non-TTY stdin."""
     print("Available sessions:")
-    for i, (session_id, name, summary) in enumerate(sessions, 1):
-        print(f"  {i}. [{session_id}] {name}: {summary}")
+    for i, (session_id, name, _summary) in enumerate(sessions, 1):
+        print(f"  {i}. [{session_id}] {name}")
     while True:
         try:
             choice = input("Enter number (or q to cancel): ").strip()
@@ -115,6 +149,6 @@ def select_session_to_resume(
         return None
 
     if sys.stdin.isatty():
-        return _tty_select(sessions)
+        return _inline_select(sessions)
 
     return _fallback_select(sessions)

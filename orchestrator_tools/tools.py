@@ -12,10 +12,12 @@ from prompts.prompts import (
     CODER_SYSTEM_PROMPT,
     EXPLORER_SYSTEM_PROMPT,
     REVIEWER_SYSTEM_PROMPT,
+    TEST_COMMAND_SELECTOR_SYSTEM_PROMPT,
     build_coder_prompt,
     build_explorer_prompt,
     build_planner_prompt,
     build_reviewer_prompt,
+    build_test_command_selector_prompt,
 )
 from tools.tools import Workspace
 from tools.tools_registry import (
@@ -23,6 +25,8 @@ from tools.tools_registry import (
     make_coder_tools,
     make_explorer_dispatch,
     make_explorer_tools,
+    make_reviewer_dispatch,
+    make_reviewer_tools,
 )
 
 
@@ -136,12 +140,36 @@ def code(task: str, plan: str, files: list[str], workspace_root: str) -> str:
     return f"CODER RESULT:\n{result}\n\nTRACE:\n{json.dumps(trace, indent=2)}"
 
 
+def _select_test_command(workspace: Workspace, scope: str) -> str | None:
+    """Ask an LLM which verification command fits the workspace."""
+    files = workspace.list_files(".", recursive=False)
+    if not isinstance(files, list):
+        files = []
+
+    messages = [
+        {"role": "system", "content": TEST_COMMAND_SELECTOR_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": build_test_command_selector_prompt(files, scope),
+        },
+    ]
+    command = call_text(messages).strip()
+    command = command.strip("`").strip()
+    if not command or command.lower() == "none":
+        return None
+    return command
+
+
 def test(scope: str, workspace_root: str) -> str:
-    """Run the test suite directly (no LLM)."""
+    """Run the most appropriate verification command for the workspace."""
     workspace = Workspace(workspace_root)
-    command = "pytest -q" if not scope else f"pytest -q {scope}"
-    result = workspace.run_tests(command=command)
-    return f"TEST RESULT:\n{json.dumps(result, indent=2)}"
+    command = _select_test_command(workspace, scope)
+
+    if not command:
+        return "TEST RESULT: No suitable verification command found for this workspace."
+
+    result = workspace.execute_command(command=command, timeout=120)
+    return f"TEST RESULT ({command}):\n{json.dumps(result, indent=2)}"
 
 
 def review(task: str, summary: str, workspace_root: str) -> str:
@@ -152,8 +180,8 @@ def review(task: str, summary: str, workspace_root: str) -> str:
         workspace_root,
         system_prompt,
         user_prompt,
-        make_explorer_tools,
-        make_explorer_dispatch,
+        make_reviewer_tools,
+        make_reviewer_dispatch,
     )
     return f"REVIEWER RESULT:\n{result}\n\nTRACE:\n{json.dumps(trace, indent=2)}"
 

@@ -184,12 +184,15 @@ def make_coder_dispatch(workspace: Workspace) -> dict[str, Callable]:
 
 
 def make_reviewer_tools() -> list[dict]:
-    """Reviewer only needs to read the plan and code/test output."""
-    return READ_TOOLS
+    """Reviewer reads files and runs verification commands, but does not edit."""
+    return [*READ_TOOLS, EXECUTE_COMMAND_TOOL]
 
 
 def make_reviewer_dispatch(workspace: Workspace) -> dict[str, Callable]:
-    return _build_dispatch(workspace, {"read_file", "view_file", "list_files", "search_files"})
+    return _build_dispatch(
+        workspace,
+        {"read_file", "view_file", "list_files", "search_files", "execute_command"},
+    )
 
 
 def extract_tool_calls(message) -> list[dict]:

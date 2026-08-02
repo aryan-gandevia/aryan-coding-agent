@@ -150,10 +150,13 @@ class Session:
         title = call_text(messages).strip()
         # Remove surrounding quotes if the model added them.
         title = title.strip('"').strip("'")
-        # Collapse whitespace and truncate to ~40 chars.
-        title = " ".join(title.split())
-        if len(title) > 50:
-            title = title[:47] + "..."
+        # Collapse whitespace and enforce the 10-word limit.
+        words = title.split()
+        if len(words) > 10:
+            title = " ".join(words[:10])
+        title = title.strip()
+        if len(title) > 70:
+            title = title[:67] + "..."
         self.title = title
         if self.manager is not None:
             self.manager.set_session_name(self.session_id, title)

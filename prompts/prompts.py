@@ -105,6 +105,13 @@ Guidelines:
 - Run tests after making changes.
 - If tests fail, fix them before returning.
 - When done, summarize what you changed.
+
+Self-check before returning:
+- Re-read every file you edited.
+- Run syntax/compile checks via execute_command (e.g. `python -m py_compile file.py`, `node --check file.js`, `tsc --noEmit` for TypeScript).
+- Run the project's test command if one exists.
+- Check cross-file consistency (e.g., HTML IDs referenced in JS exist, imports resolve, function signatures match).
+- Fix any issues you find. Do not hand off sloppy work to the reviewer.
 """
 
 
@@ -123,13 +130,18 @@ def build_coder_prompt(task: str, plan: str, files: list[str]) -> str:
 
 REVIEWER_SYSTEM_PROMPT = """You are a Reviewer subagent. Your job is to assess whether the current work satisfies the task.
 
-You may read files to verify the implementation. You may NOT write or edit files.
+You may read files and run verification commands via execute_command to confirm the implementation works. Choose verification appropriate to the project type, for example:
+- Python: `python -m py_compile file.py` and `pytest`
+- JavaScript/Node: `node --check file.js` and `npm test`
+- Browser project: check that referenced DOM selectors and assets exist
+
+You may NOT write or edit files.
 
 Respond exactly in one of these formats:
 - PASS: the task is complete and correct.
 - REVISE: <reason> — explain what is still wrong or missing.
 
-Be strict but fair. If tests are passing and the implementation matches the task, respond PASS.
+Be strict but fair. If tests and verification pass and the implementation matches the task, respond PASS.
 """
 
 
@@ -214,7 +226,7 @@ Given a user's first message and the outcome of that turn, produce a short,
 clear title for the session.
 
 Rules:
-- Maximum 5 words.
+- Maximum 10 words.
 - No punctuation at the end.
 - Lowercase except proper nouns.
 - Output only the title, nothing else.
@@ -228,5 +240,39 @@ def build_session_title_prompt(user_input: str, outcome: str) -> str:
         "Turn outcome:\n"
         f"{outcome}\n\n"
         "Generate a concise session title (max 5 words)."
+    )
+
+
+# -----------------------------------------------------------------------------
+# Test / verification command selector
+# -----------------------------------------------------------------------------
+
+TEST_COMMAND_SELECTOR_SYSTEM_PROMPT = """You are a build/test expert. Your job is to pick the single best verification command for a workspace.
+
+Given the workspace files and any user-supplied scope, choose a shell command that:
+- Runs tests if they exist
+- Compiles/checks the code if there are no tests
+- Returns quickly and reliably
+
+Examples:
+- Python with pytest tests: `pytest -q`
+- Python file only: `python -m py_compile <file>`
+- JavaScript/Node: `node --check <file>` or `npm test`
+- TypeScript: `tsc --noEmit` or `npx tsc --noEmit`
+- Browser project: `python3 -m http.server 0 &` is not a verification; prefer syntax checks or `node --check`
+
+If there is no meaningful verification command, reply with exactly the word `none`.
+Reply with only the command or `none`. No markdown, no explanation.
+"""
+
+
+def build_test_command_selector_prompt(files: list[str], scope: str) -> str:
+    files_str = "\n".join(f"- {f}" for f in files) or "(empty workspace)"
+    scope_str = f"Requested scope: {scope}\n" if scope else ""
+    return (
+        "Workspace top-level files:\n"
+        f"{files_str}\n\n"
+        f"{scope_str}"
+        "What single verification command should be run in the workspace root?"
     )
 
