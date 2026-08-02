@@ -1,0 +1,16 @@
+# Secrets and local config
+.openai_key
+llm-api-instructions.md
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.env/
+
+# OS files
+.DS_Store
