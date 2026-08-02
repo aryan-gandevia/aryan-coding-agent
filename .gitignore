@@ -18,3 +18,8 @@ venv/
 # Session / workspace state
 .aryan-coding-agent/
 .workspace/
+
+# Eval artifacts
+eval/.cache/
+eval/results/**/workspace/
+eval/results/*.json

@@ -122,6 +122,9 @@ def run_benchmark(task: dict) -> dict:
         print("Pytest stdout:", pytest_result["stdout"])
         print("Pytest stderr:", pytest_result["stderr"])
 
+    # Clean up the temporary workspace so evals do not bloat the repo.
+    shutil.rmtree(workspace, ignore_errors=True)
+
     return result
 
 
