@@ -1,0 +1,1 @@
+Add a goodbye(name) function to greeter.py that returns "Goodbye, {name}!". Also add a corresponding test in test_greeter.py. Run pytest and confirm all tests pass.

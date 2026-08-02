@@ -1,0 +1,62 @@
+[
+  {
+    "name": "buggy_add",
+    "prompt": "Fix the code so that all tests pass.",
+    "passed": true,
+    "agent_result": "Inspected the repository and ran the full test suite. The existing `calculator.py` implementation already satisfies the visible tests; `pytest -q` passes with 1 test passed, so no code changes were necessary.\n\nTokens used: 1,291 / 100,000",
+    "raw_output": "[Parent] Step 1\n[Parent] action: explore({\"task\": \"Fix the code so that all tests pass.\", \"question\": \"Inspect the repository structure, identify the failing tests and likely bug(s), and report the relevant files and recommended fix. Do not modify files.\"})\n[Parent] observation (explore): EXPLORER RESULT:\nRepository contains:\n\n- `calculator.py`: Defines `add(a, b)` as `return a + b`.\n- `test_calculator.py`: Tests positive, negative, and zero addition.\n- `task.txt`: States the goal is to make all tests pass.\n\nTest result:\n\n- `pytest -q`: **1 passed**\n- No failing tests are currently p\n[Parent] Tokens: 1,182 / 100,000 (1.2%)\n[Parent] Step 2\n[Parent] action: test({\"scope\": \"\"})\n[Parent] observation (test): TEST RESULT (pytest -q):\n{\n  \"stdout\": \".                                                                        [100%]\\n1 passed in 0.00s\\n\",\n  \"stderr\": \"\",\n  \"exit_code\": 0\n}\n[Parent] Tokens: 1,239 / 100,000 (1.2%)\n[Parent] Step 3\n[Parent] action: finish({\"summary\": \"Inspected the repository and ran the full test suite. The existing `calculator.py` implementation already satisfies the visible tests; `pytest -q` passes with 1 test passed, so no code changes were necessary.\"})\n[Parent] Tokens: 1,291 / 100,000 (1.3%)\n",
+    "tokens": 1291,
+    "parent_steps": 3,
+    "duration_seconds": 9.59,
+    "pytest": {
+      "returncode": 0,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.00s\n",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "greeter",
+    "prompt": "Fix the code so that all tests pass.",
+    "passed": true,
+    "agent_result": "Inspected the workspace and ran the full test suite. The existing implementation already satisfies all visible tests; `pytest -q` passes with 2 tests passed. No code changes were necessary.\n\nTokens used: 1,363 / 100,000",
+    "raw_output": "[Parent] Step 1\n[Parent] action: explore({\"task\": \"Fix the code so that all tests pass in the greeter workspace.\", \"question\": \"Inspect the repository structure, identify the failing tests/current behavior, and determine the likely bug and relevant files. Report exact test command and recommended fix.\"})\n[Parent] observation (explore): EXPLORER RESULT:\n## Findings\n\n- Repository contains:\n  - `greeter.py`\n  - `test_greeter.py`\n  - `task.txt`\n- Current implementation in `greeter.py`:\n  - `hello(name)` returns `f\"Hello, {name}!\"`\n  - `goodbye(name)` returns `f\"Goodbye, {name}!\"`\n- Tests in `test_greeter.py` verify both functions for \n[Parent] Tokens: 1,257 / 100,000 (1.3%)\n[Parent] Step 2\n[Parent] action: test({\"scope\": \"pytest -q\"})\n[Parent] observation (test): TEST RESULT (pytest -q):\n{\n  \"stdout\": \"..                                                                       [100%]\\n2 passed in 0.00s\\n\",\n  \"stderr\": \"\",\n  \"exit_code\": 0\n}\n[Parent] Tokens: 1,316 / 100,000 (1.3%)\n[Parent] Step 3\n[Parent] action: finish({\"summary\": \"Inspected the workspace and ran the full test suite. The existing implementation already satisfies all visible tests; `pytest -q` passes with 2 tests passed. No code changes were necessary.\"})\n[Parent] Tokens: 1,363 / 100,000 (1.4%)\n",
+    "tokens": 1363,
+    "parent_steps": 3,
+    "duration_seconds": 9.09,
+    "pytest": {
+      "returncode": 0,
+      "stdout": "..                                                                       [100%]\n2 passed in 0.00s\n",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "number_utils",
+    "prompt": "Fix the code so that all tests pass.",
+    "passed": true,
+    "agent_result": "Inspected the workspace and ran the full test suite. All 4 tests pass (`4 passed in 0.01s`), and no code changes are needed.\n\nTokens used: 1,444 / 100,000",
+    "raw_output": "[Parent] Step 1\n[Parent] action: explore({\"task\": \"Fix the code so that all tests pass in the number_utils workspace.\", \"question\": \"Inspect the repository structure, identify the failing tests and likely root cause, and report the relevant files and recommended fix.\"})\n[Parent] observation (explore): EXPLORER RESULT:\nRepository contains only:\n\n- `utils.py` \u2014 implementations for `factorial`, `divide`, and `is_even`\n- `test_utils.py` \u2014 four tests covering those functions\n- `task.txt` \u2014 generic instruction to make tests pass\n\nCurrent test result:\n\n```text\n4 passed in 0.01s\n```\n\nFindings:\n\n- No test\n[Parent] Tokens: 1,298 / 100,000 (1.3%)\n[Parent] Step 2\n[Parent] action: review({\"task\": \"Fix the code so that all tests pass in the number_utils workspace.\", \"summary\": \"Repository inspection found utils.py and test_utils.py. The full test suite currently passes: 4 passed in 0.01s. No code changes were made because no failing behavior is present in the available tests.\"})\n[Parent] observation (review): REVIEWER RESULT:\nPASS: The available test suite passes completely (4 tests passed), and no failing behavior or missing implementation is evident.\n\nTRACE:\n[]\n[Parent] Tokens: 1,401 / 100,000 (1.4%)\n[Parent] Step 3\n[Parent] action: finish({\"summary\": \"Inspected the workspace and ran the full test suite. All 4 tests pass (`4 passed in 0.01s`), and no code changes are needed.\"})\n[Parent] Tokens: 1,444 / 100,000 (1.4%)\n",
+    "tokens": 1444,
+    "parent_steps": 3,
+    "duration_seconds": 9.74,
+    "pytest": {
+      "returncode": 0,
+      "stdout": "....                                                                     [100%]\n4 passed in 0.01s\n",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "subtle_cache_bug",
+    "prompt": "Fix the code so that all tests pass. The bug is subtle and may not be obvious from a single test run.",
+    "passed": true,
+    "agent_result": "Fixed the subtle cache bug in `stats.py` by replacing the shared mutable default cache with a fresh local cache for each `running_mean` call. Verified with the full test suite: 3 tests passed.\n\nTokens used: 3,963 / 100,000",
+    "raw_output": "[Parent] Step 1\n[Parent] action: explore({\"task\": \"Fix the code so that all tests pass. Investigate the subtle cache bug in the repository.\", \"question\": \"Inspect the repository structure, identify the relevant cache implementation and tests, and determine the likely bug and recommended next steps. Do not modify files.\"})\n[Parent] observation (explore): EXPLORER RESULT:\nRepository is minimal:\n\n- `stats.py` \u2014 cache-related implementation.\n- `test_stats.py` \u2014 three tests covering first call, repeated call, and empty input.\n- `task.txt` \u2014 confirms the goal is to fix a subtle cache bug.\n- `.pytest_cache/v/cache/lastfailed` \u2014 records `test_running_mean_\n[Parent] Tokens: 1,640 / 100,000 (1.6%)\n[Parent] Step 2\n[Parent] action: code({\"task\": \"Fix the mutable default cache bug in running_mean so every invocation computes from scratch and preserves expected behavior, including empty input.\", \"plan\": \"1. Edit stats.py to remove shared mutable default state by using a per-call local cache (or equivalent safe initialization). 2. Preserve the existing running-mean algorithm and API behavior as much as possible. 3. Inspect the final diff for unintended changes.\", \"files\": [\"stats.py\"]})\n[Parent] observation (code): CODER RESULT:\nImplemented the `running_mean` fix in `stats.py`:\n\n- Removed the shared mutable default argument.\n- Added a per-invocation local cache.\n- Preserved the existing running-mean algorithm and empty-input behavior.\n\nValidation:\n- `python -m py_compile stats.py` passed.\n- `pytest -q` passed:\n[Parent] Tokens: 2,886 / 100,000 (2.9%)\n[Parent] Step 3\n[Parent] action: test({\"scope\": \"\"})\n[Parent] observation (test): TEST RESULT (pytest -q):\n{\n  \"stdout\": \"...                                                                      [100%]\\n3 passed in 0.00s\\n\",\n  \"stderr\": \"\",\n  \"exit_code\": 0\n}\n[Parent] Tokens: 2,943 / 100,000 (2.9%)\n[Parent] Step 4\n[Parent] action: review({\"task\": \"Fix the code so that all tests pass. The bug is subtle and may not be obvious from a single test run.\", \"summary\": \"Changed stats.py so running_mean uses a fresh local cache on every call instead of a mutable default list. Full pytest suite passes: 3 passed. Python compilation also passed.\"})\n[Parent] observation (review): REVIEWER RESULT:\nPASS: The implementation uses a fresh local cache on each `running_mean` call, preventing state leakage between calls. The full test suite passes (`3 passed`).\n\nTRACE:\n[\n  {\n    \"step\": 0,\n    \"tool\": \"list_files\",\n    \"args\": {\n      \"path\": \"\",\n      \"recursive\": true\n    },\n    \"\n[Parent] Tokens: 3,912 / 100,000 (3.9%)\n[Parent] Step 5\n[Parent] action: finish({\"summary\": \"Fixed the subtle cache bug in `stats.py` by replacing the shared mutable default cache with a fresh local cache for each `running_mean` call. Verified with the full test suite: 3 tests passed.\"})\n[Parent] Tokens: 3,963 / 100,000 (4.0%)\n",
+    "tokens": 3963,
+    "parent_steps": 5,
+    "duration_seconds": 26.47,
+    "pytest": {
+      "returncode": 0,
+      "stdout": "...                                                                      [100%]\n3 passed in 0.00s\n",
+      "stderr": ""
+    }
+  }
+]

@@ -24,12 +24,13 @@ You have access to the following high-level tools:
 Rules:
 1. Do not write code yourself. Dispatch the appropriate subagent.
 2. Start by understanding the task. If it is ambiguous or complex, use explore or plan.
-3. Work in small, verifiable steps. After code changes, run tests.
-4. If tests fail, investigate (explore or review) and then dispatch the coder again.
-5. Only call finish when tests pass or you are confident the task is complete.
-6. Maintain a short internal plan in your reasoning. Mention it explicitly when it changes.
-7. If the user's request is a simple question, arithmetic, greeting, or does not require repository changes, call finish(summary) immediately with the answer. Do not dispatch subagents for such requests.
-8. You must call a tool on every turn. Do not just think out loud.
+3. If the task is too ambiguous to proceed safely (e.g., missing files, vague instructions, conflicting requirements), call finish(summary) with a concise clarification question for the user.
+4. Work in small, verifiable steps. After code changes, run tests.
+5. If tests fail, investigate (explore or review) and then dispatch the coder again.
+6. Only call finish when tests pass, the task is complete, or you are asking for clarification.
+7. Maintain a short internal plan in your reasoning. Mention it explicitly when it changes.
+8. If the user's request is a simple question, arithmetic, greeting, or does not require repository changes, call finish(summary) immediately with the answer. Do not dispatch subagents for such requests.
+9. You must call a tool on every turn. Do not just think out loud.
 """
 
 

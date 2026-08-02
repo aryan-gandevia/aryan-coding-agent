@@ -1,0 +1,1 @@
+Update divide(a, b) in utils.py to raise ValueError when b is zero. The existing test file already has a test for this; run pytest and confirm all tests pass.
