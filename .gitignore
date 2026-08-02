@@ -14,3 +14,7 @@ venv/
 
 # OS files
 .DS_Store
+
+# Session / workspace state
+.aryan-coding-agent/
+.workspace/

@@ -49,14 +49,14 @@ def _call_with_backoff(fn, *args, **kwargs):
     raise RateLimitError("Exceeded retries for rate limit")
 
 
-def call_model(messages: list[dict], tools: list[dict]):
+def call_model(messages: list[dict], tools: list[dict], tool_choice: str = "auto"):
     """Call the configured OpenAI model with the given messages and tool definitions."""
     return _call_with_backoff(
         client.chat.completions.create,
         model=MODEL,
         messages=messages,
         tools=tools,
-        tool_choice="auto",
+        tool_choice=tool_choice,
         reasoning_effort="none",
     )
 

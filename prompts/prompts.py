@@ -3,6 +3,8 @@
 Includes the parent orchestrator, Planner, Explorer, Coder, and Reviewer.
 """
 
+import json
+
 
 # -----------------------------------------------------------------------------
 # Parent / Orchestrator
@@ -26,6 +28,8 @@ Rules:
 4. If tests fail, investigate (explore or review) and then dispatch the coder again.
 5. Only call finish when tests pass or you are confident the task is complete.
 6. Maintain a short internal plan in your reasoning. Mention it explicitly when it changes.
+7. If the user's request is a simple question, arithmetic, greeting, or does not require repository changes, call finish(summary) immediately with the answer. Do not dispatch subagents for such requests.
+8. You must call a tool on every turn. Do not just think out loud.
 """
 
 
@@ -135,3 +139,94 @@ def build_reviewer_prompt(task: str, summary: str) -> str:
         f"Current state summary:\n{summary}\n\n"
         "Review the work and respond with PASS or REVISE: <reason>."
     )
+
+
+# -----------------------------------------------------------------------------
+# Summarizer (for session memory)
+# -----------------------------------------------------------------------------
+
+SUMMARIZER_SYSTEM_PROMPT = """You are a Summarizer agent. Your job is to condense one turn of a coding-agent conversation into a structured JSON object.
+
+The input contains:
+- The user's task for this turn
+- The assistant's tool calls and the resulting observations
+- The final outcome
+
+Output valid JSON with exactly this structure:
+{
+  "user_prompt": "the user's task as a concise string",
+  "actions": [
+    {"tool": "name_of_meta_tool", "summary": "one-line description of what happened"}
+  ],
+  "outcome": "final result of the turn",
+  "blockers": ["list of any blockers, or empty if none"]
+}
+
+Keep the outcome and summaries concise but specific. Do not wrap the output in markdown fences.
+"""
+
+
+def build_summarizer_prompt(turn_transcript: str) -> str:
+    return (
+        "Summarize the following turn into the required JSON format.\n\n"
+        "--- TURN TRANSCRIPT ---\n"
+        f"{turn_transcript}\n"
+        "--- END TRANSCRIPT ---\n\n"
+        "Output only the JSON object."
+    )
+
+
+# -----------------------------------------------------------------------------
+# Memory Merge (for long-term history)
+# -----------------------------------------------------------------------------
+
+MEMORY_MERGE_SYSTEM_PROMPT = """You are a Memory Merge agent. You maintain a concise, non-redundant list of key facts about a coding session.
+
+You will receive:
+- The current long-term history (a list of fact strings)
+- A new turn summary (a JSON object describing one completed turn)
+
+Update the long-term history by incorporating the new turn. Add new facts, merge related ones, and remove duplicates or outdated information. Keep each fact to one line.
+
+Return valid JSON: a single array of strings.
+Do not wrap the output in markdown fences.
+"""
+
+
+def build_memory_merge_prompt(long_term_history: list[str], turn_summary: dict) -> str:
+    return (
+        "Update the long-term history with the new turn summary.\n\n"
+        "Current long-term history:\n"
+        f"{json.dumps(long_term_history, indent=2)}\n\n"
+        "New turn summary:\n"
+        f"{json.dumps(turn_summary, indent=2)}\n\n"
+        "Return an updated JSON array of fact strings."
+    )
+
+
+# -----------------------------------------------------------------------------
+# Session title generator
+# -----------------------------------------------------------------------------
+
+SESSION_TITLE_SYSTEM_PROMPT = """You are a session-naming assistant.
+
+Given a user's first message and the outcome of that turn, produce a short,
+clear title for the session.
+
+Rules:
+- Maximum 5 words.
+- No punctuation at the end.
+- Lowercase except proper nouns.
+- Output only the title, nothing else.
+"""
+
+
+def build_session_title_prompt(user_input: str, outcome: str) -> str:
+    return (
+        "First user message:\n"
+        f"{user_input}\n\n"
+        "Turn outcome:\n"
+        f"{outcome}\n\n"
+        "Generate a concise session title (max 5 words)."
+    )
+
