@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from harness import repo_index
+
 
 class Workspace:
     """Encapsulates the repository root and enforces that all operations stay inside it."""
@@ -59,6 +61,7 @@ class Workspace:
         target = self._resolve(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content)
+        repo_index.update_file_in_index(self.root, path, content)
         return f"Wrote {path}"
 
     def edit_file(self, path: str, start_line: int, end_line: int, new_content: str) -> str:
@@ -71,7 +74,14 @@ class Workspace:
         new_lines = new_content.splitlines()
         updated = lines[: start_line - 1] + new_lines + lines[end_line:]
         target.write_text("\n".join(updated) + "\n")
+        repo_index.update_file_in_index(self.root, path)
         return f"Edited lines {start_line}-{end_line} in {path}"
+
+    def query_repo_index(self, query: str, top_k: int = 10) -> str:
+        results = repo_index.query_index(self.root, query, top_k=top_k)
+        if not results:
+            return "No matching files found."
+        return "Relevant files:\n" + "\n".join(f"  - {p}" for p in results)
 
     def execute_command(self, command: str, cwd: str | None = None, timeout: int = 60) -> dict:
         run_dir = self._resolve(cwd) if cwd else self.root

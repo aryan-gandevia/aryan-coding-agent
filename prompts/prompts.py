@@ -72,7 +72,9 @@ def build_planner_prompt(task: str, context: str) -> str:
 
 EXPLORER_SYSTEM_PROMPT = """You are an Explorer subagent. Your job is to research a codebase and answer a specific question.
 
-You may read files, list directories, search contents, and run tests. You may NOT write or edit files.
+You may read files, list directories, search contents, run tests, and query the repo index. You may NOT write or edit files.
+
+When the workspace has more than a few files, start with `query_repo_index` to find relevant files, then read those files rather than listing the entire repo.
 
 Summarize your findings concisely. Be specific about:
 - Which files are relevant
@@ -108,6 +110,7 @@ Guidelines:
 - When done, summarize what you changed.
 
 Self-check before returning:
+- If the workspace has more than a few files, use `query_repo_index` to find relevant files before reading.
 - Re-read every file you edited.
 - Run syntax/compile checks via execute_command (e.g. `python -m py_compile file.py`, `node --check file.js`, `tsc --noEmit` for TypeScript).
 - Run the project's test command if one exists.

@@ -135,6 +135,27 @@ RUN_TESTS_TOOL = {
 }
 
 
+QUERY_REPO_INDEX_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "query_repo_index",
+        "description": (
+            "Find the most relevant files for a natural-language query using the "
+            "workspace's built-in code index. Use this first when exploring a "
+            "workspace with more than a handful of files."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "top_k": {"type": "integer"},
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+
 def _build_dispatch(workspace: Workspace, allowed: set[str]) -> dict[str, Callable]:
     dispatch: dict[str, Callable] = {}
     tool_map = {
@@ -146,6 +167,7 @@ def _build_dispatch(workspace: Workspace, allowed: set[str]) -> dict[str, Callab
         "edit_file": workspace.edit_file,
         "execute_command": workspace.execute_command,
         "run_tests": workspace.run_tests,
+        "query_repo_index": workspace.query_repo_index,
     }
     for name in allowed:
         if name in tool_map:
@@ -154,17 +176,20 @@ def _build_dispatch(workspace: Workspace, allowed: set[str]) -> dict[str, Callab
 
 
 def make_explorer_tools() -> list[dict]:
-    """Read-only tools for exploration, plus a constrained test runner."""
-    return [*READ_TOOLS, RUN_TESTS_TOOL]
+    """Read-only exploration tools plus index lookup and a constrained test runner."""
+    return [*READ_TOOLS, QUERY_REPO_INDEX_TOOL, RUN_TESTS_TOOL]
 
 
 def make_explorer_dispatch(workspace: Workspace) -> dict[str, Callable]:
-    return _build_dispatch(workspace, {"read_file", "view_file", "list_files", "search_files", "run_tests"})
+    return _build_dispatch(
+        workspace,
+        {"read_file", "view_file", "list_files", "search_files", "query_repo_index", "run_tests"},
+    )
 
 
 def make_coder_tools() -> list[dict]:
-    """Full toolset for code editing and testing."""
-    return [*READ_TOOLS, WRITE_TOOL, EDIT_TOOL, EXECUTE_COMMAND_TOOL, RUN_TESTS_TOOL]
+    """Full toolset for code editing, exploration, and testing."""
+    return [*READ_TOOLS, WRITE_TOOL, EDIT_TOOL, QUERY_REPO_INDEX_TOOL, EXECUTE_COMMAND_TOOL, RUN_TESTS_TOOL]
 
 
 def make_coder_dispatch(workspace: Workspace) -> dict[str, Callable]:
@@ -175,6 +200,7 @@ def make_coder_dispatch(workspace: Workspace) -> dict[str, Callable]:
             "view_file",
             "list_files",
             "search_files",
+            "query_repo_index",
             "write_file",
             "edit_file",
             "execute_command",
